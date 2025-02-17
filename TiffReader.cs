@@ -39,6 +39,11 @@
             
         }
 
+        public byte[] SavePageStrip(int page, bool singleStrip=true)
+        {
+            return IFDs[page].SaveStrip(singleStrip);
+        }
+
         public byte[] SavePage(int page) {
             var ifd = IFDs[page];
 
@@ -53,12 +58,19 @@
                     // TIFF identificator
                     writer.Write((ushort)42);
 
-                    // Offset to first IFD
-                    writer.Write((uint)writer.BaseStream.Position + 4);
+                    // Skip to first IFD
+                    writer.BaseStream.Position = 8;
+                    
+                    var firstIFD = ifd.SaveDirectory(writer);
 
-                    ifd.SaveDirectory(writer);
-
+                    // Write blank next IFD offset
                     writer.Write((uint)0);
+
+                    // Seek back to first IFD offset
+                    writer.BaseStream.Position = 4;
+
+                    // Write offset
+                    writer.Write((uint)firstIFD);                    
                 }
 
                 return stream.ToArray();

@@ -130,6 +130,39 @@ namespace TurboTiff
             ValueOffset = Reader.ReadBytes(4);
         }
 
+        public long[] GetIntegerValues() {
+            var longValues = new long[Values.Count];
+
+            for (int i = 0; i < Values.Count; i++)
+            {
+                switch (Type)
+                {
+                    case Type.Byte:
+                        longValues[i] = (byte)Values[i];
+                        break;
+                    case Type.Short:
+                        longValues[i] = (ushort)Values[i];
+                        break;
+                    case Type.Long:
+                        longValues[i] = (uint)Values[i];
+                        break;
+                    case Type.SByte:
+                        longValues[i] = (sbyte)Values[i];
+                        break;
+                    case Type.SShort:
+                        longValues[i] = (short)Values[i];
+                        break;
+                    case Type.SLong:
+                        longValues[i] = (int)Values[i];
+                        break;
+                    default:
+                        throw new Exception("Field type is not an integer.");
+                }
+            }
+
+            return longValues;
+        }
+
         internal int TypeSize() {
             switch (Type)
             {
@@ -138,21 +171,17 @@ namespace TurboTiff
                 case Type.ASCII:
                 case Type.Undefined:
                     return 1;
-                    break;
                 case Type.Short:
                 case Type.SShort:
                     return 2;
-                    break;
                 case Type.Long:
                 case Type.SLong:
                 case Type.Float:
                     return 4;
-                    break;
                 case Type.Rational:
                 case Type.SRational:
                 case Type.Double:
                     return 8;
-                    break;
                 default:
                     break;
             }
@@ -241,7 +270,10 @@ namespace TurboTiff
                 return;
             else
             {
-                ValueOffset = BitConverter.GetBytes((uint)writer.BaseStream.Position);
+                var offset = (long)(MathF.Ceiling(writer.BaseStream.Position / 4.0f) * 4);
+                writer.BaseStream.Position = offset;
+
+                ValueOffset = BitConverter.GetBytes((uint)offset);
 
                 WriteValue_Internal(writer);
             }
